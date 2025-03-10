@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worker Onboarding</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Worker Onboarding Form</h1>
+        <form id="onboardForm">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
+            <span class="error" id="nameError"></span>
+
+            <label for="phone">Phone:</label>
+            <input type="tel" id="phone" name="phone" required>
+            <span class="error" id="phoneError"></span>
+
+            <label for="address">Address:</label>
+            <textarea id="address" name="address" required></textarea>
+            <span class="error" id="addressError"></span>
+
+            <label for="society">Society Assigned:</label>
+            <input type="text" id="society" name="society" required>
+            <span class="error" id="societyError"></span>
+
+            <label for="adharImage">Aadhar Card Image:</label>
+            <input type="file" id="adharImage" name="adharImage" accept="image/*" required>
+            <span class="error" id="adharError"></span>
+
+            <label for="workerPhoto">Worker Photo:</label>
+            <input type="file" id="workerPhoto" name="workerPhoto" accept="image/*" required>
+            <span class="error" id="workerPhotoError"></span>
+
+            <label for="salary">Salary:</label>
+            <input type="text" id="salary" name="salary" required>
+            <span class="error" id="salaryError"></span>
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <span class="checkmark">&#10004;</span>
+            <p>Form submitted successfully!</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('onboardForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            // Get form values
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const societyName = document.getElementById('society').value.trim();
+            const salary = document.getElementById('salary').value.trim();
+            const adharImage = document.getElementById('adharImage').files[0];
+            const workerPhoto = document.getElementById('workerPhoto').files[0];
+
+            // Validate inputs
+            let isValid = true;
+
+            if (!/^[a-zA-Z\s]+$/.test(name)) {
+                document.getElementById("nameError").textContent = "Only letters and spaces allowed.";
+                isValid = false;
+            } else {
+                document.getElementById("nameError").textContent = "";
+            }
+
+            if (!/^\d{10}$/.test(phone)) {
+                document.getElementById("phoneError").textContent = "Enter a valid 10-digit phone number.";
+                isValid = false;
+            } else {
+                document.getElementById("phoneError").textContent = "";
+            }
+
+            if (address === "") {
+                document.getElementById("addressError").textContent = "Address is required.";
+                isValid = false;
+            } else {
+                document.getElementById("addressError").textContent = "";
+            }
+
+            if (societyName === "") {
+                document.getElementById("societyError").textContent = "Society name is required.";
+                isValid = false;
+            } else {
+                document.getElementById("societyError").textContent = "";
+            }
+
+            if (!adharImage) {
+                document.getElementById("adharError").textContent = "Upload Aadhar image.";
+                isValid = false;
+            } else {
+                document.getElementById("adharError").textContent = "";
+            }
+
+            if (!workerPhoto) {
+                document.getElementById("workerPhotoError").textContent = "Upload worker photo.";
+                isValid = false;
+            } else {
+                document.getElementById("workerPhotoError").textContent = "";
+            }
+
+            if (!/^\d+(\.\d{1,2})?$/.test(salary)) {
+                document.getElementById("salaryError").textContent = "Enter a valid salary amount.";
+                isValid = false;
+            } else {
+                document.getElementById("salaryError").textContent = "";
+            }
+
+            if (!isValid) {
+                return; // Stop submission if validation fails
+            }
+
+            // Create a FormData object
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('phone', phone);
+            formData.append('address', address);
+            formData.append('assigned_society', JSON.stringify({
+                name: societyName,
+                address: 'Default Address'
+            }));
+            formData.append('adharImage', adharImage);
+            formData.append('workerPhoto', workerPhoto);
+            formData.append('salary', salary);
+
+            try {
+                const response = await fetch('http://localhost:5000/api/worker/onboard', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Show success modal
+                    document.getElementById("successModal").style.display = "flex";
+
+                    // Hide modal after 3 seconds
+                    setTimeout(() => {
+                        document.getElementById("successModal").style.display = "none";
+                    }, 3000);
+
+                    // Reset form
+                    document.getElementById("onboardForm").reset();
+                } else {
+                    alert(result.message || "An error occurred while submitting the form.");
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while submitting the form.');
+            }
+        });
+    </script>
+
+    <style>
+        .container {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        input,
+        textarea {
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .error {
+            color: red;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        /* Success Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .checkmark {
+            font-size: 40px;
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</body>
+
+</html>
